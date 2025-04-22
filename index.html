@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculatrice</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron&display=swap" rel="stylesheet">
+
+</head>
+<body>
+    <div class="calculatrice">
+        <div class="ecran-container">
+            <!-- Mini-écran de prévisualisation -->
+            <input type="text" class="preview" readonly placeholder="Prévisualisation" title="Prévisualisation du calcul" />
+        
+            <!-- Grand écran principal -->
+            <input type="text" class="ecran" readonly placeholder="0" title="Écran de la calculatrice" />
+        </div>
+    
+        <div class="touches">
+            <button class="button" data-key="7">7</button>
+            <button class="button" data-key="8">8</button>
+            <button class="button" data-key="9">9</button>
+            <button class="button" data-key="/">/</button>
+            <button class="button" data-key="4">4</button>
+            <button class="button" data-key="5">5</button>
+            <button class="button" data-key="6">6</button>
+            <button class="button" data-key="*">*</button>
+            <button class="button" data-key="1">1</button>
+            <button class="button" data-key="2">2</button>
+            <button class="button" data-key="3">3</button>
+            <button class="button" data-key="-">-</button>
+            <button class="button" data-key="0">0</button>
+            <button class="button" data-key=".">.</button>
+            <button class="button" data-key="=">=</button>
+            <button class="button" data-key="+">+</button>
+            <button class="button" data-key="C">C</button>
+            <button id="darkModeButton" title="Activer le mode sombre/NASA">🌒</button>
+        </div>
+    </div>
+<div class="historique">
+    <h3>Historique</h3>
+    <ul id="historiqueList"></ul>
+</div>
+    
+    <script src="app.js"></script>
+</body>
+
+</html>
