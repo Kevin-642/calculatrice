@@ -1,0 +1,300 @@
+:root {
+    --cyan: #00ffff;
+    --pink: #ff69b4;
+    --orange: #FF5722;
+    --dark-bg: #1c1c1c;
+    --hover-bg: #444;
+    --fn-bg: #112233;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    background-image: url("images/space.jpeg");
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    font-family: 'Orbitron', sans-serif;
+    animation: apparaitre 0.8s ease-out;
+}
+
+@keyframes apparaitre {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Mode clair sur fond spatial */
+body:not(.dark-mode) {
+    color: var(--cyan);
+}
+
+body:not(.dark-mode) .ecran,
+body:not(.dark-mode) .preview,
+body:not(.dark-mode) .button,
+body:not(.dark-mode) .historique h3,
+body:not(.dark-mode) .historique li {
+    color: var(--cyan);
+    text-shadow: 0 0 5px var(--cyan);
+}
+
+body:not(.dark-mode) .ecran {
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+body:not(.dark-mode) .preview {
+    background-color: rgba(0, 0, 0, 0.3);
+}
+
+body:not(.dark-mode) .button {
+    background-color: rgba(0, 0, 0, 0.6);
+    border: 1px solid var(--cyan);
+}
+
+body:not(.dark-mode) .button:hover {
+    box-shadow: 0 0 10px var(--cyan);
+}
+
+/* Calculatrice principale */
+.calculatrice {
+    width: 350px;
+    margin: 50px auto;
+    padding: 20px;
+    background-color: var(--dark-bg);
+    border-radius: 20px;
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+    color: #fff;
+    overflow: hidden;
+    box-sizing: border-box;
+}
+
+/* Conteneur écran */
+.ecran-container {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Mini-preview (formule) */
+.preview {
+    font-size: 1em;
+    padding: 5px 10px;
+    margin-bottom: 5px;
+    background-color: transparent;
+    color: var(--cyan);
+    text-align: right;
+    border: none;
+    border-radius: 5px;
+    opacity: 0.7;
+    width: 100%;
+    height: 30px;
+    box-sizing: border-box;
+    pointer-events: none;
+}
+
+/* Grand écran (résultat) */
+.ecran {
+    font-size: 2em;
+    padding: 15px 10px;
+    margin-bottom: 15px;
+    background-color: #333;
+    color: #fff;
+    text-align: right;
+    border: none;
+    border-radius: 15px;
+    width: 100%;
+    height: 60px;
+    box-sizing: border-box;
+    box-shadow: 0 0 15px rgba(0, 255, 255, 0.7);
+    pointer-events: none;
+}
+
+/* Conteneur des boutons */
+.touches {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+}
+
+/* Style des boutons */
+.button {
+    font-size: 1.5em;
+    padding: 20px;
+    background-color: #000;
+    color: white;
+    border: none;
+    border-radius: 15px;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3), 0 0 15px 3px rgba(0, 255, 255, 0.7);
+    box-sizing: border-box;
+}
+
+.button:focus {
+    outline: 2px solid var(--cyan);
+    outline-offset: 2px;
+}
+
+.button[data-key="C"] {
+    background-color: var(--orange);
+}
+
+.button:hover {
+    background-color: var(--hover-bg);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4), 0 0 15px 5px var(--pink);
+}
+
+.button:active {
+    background-color: #333;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3), 0 0 10px 3px var(--cyan);
+}
+
+/* Bouton mode sombre */
+#darkModeButton {
+    font-size: 1.8em;
+    cursor: pointer;
+    background-color: transparent;
+    border: none;
+    color: var(--orange);
+}
+
+/* Mode sombre */
+.dark-mode {
+    background-color: #121212;
+    color: #fff;
+}
+
+.dark-mode .calculatrice {
+    background-color: #222;
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+}
+
+.dark-mode .ecran {
+    background-color: #444;
+    color: white;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3), 0 0 15px 3px var(--cyan);
+}
+
+.dark-mode .preview {
+    background-color: #555;
+    color: white;
+    opacity: 1;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3), 0 0 15px 3px var(--pink);
+}
+
+.dark-mode .button {
+    background-color: #000;
+    color: white;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3), 0 0 15px 3px var(--cyan);
+}
+
+.dark-mode .button[data-key="C"] {
+    background-color: var(--orange);
+}
+
+.dark-mode .button:hover {
+    background-color: #333;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4), 0 0 15px 5px var(--pink);
+}
+
+/* Historique */
+.historique {
+    margin-top: 30px;
+    max-height: 200px;
+    overflow-y: auto;
+    padding-right: 10px;
+}
+
+.historique ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+.historique li {
+    font-size: 1.1em;
+    padding: 5px;
+    border-bottom: 1px solid #444;
+}
+
+.historique li:last-child {
+    border-bottom: none;
+}
+
+/* Responsive */
+@media screen and (max-width: 600px) {
+    .calculatrice {
+        width: 90%;
+        padding: 15px;
+    }
+
+    .button {
+        font-size: 1.2em;
+        padding: 15px;
+    }
+
+    .ecran {
+        font-size: 1.5em;
+    }
+
+    .preview {
+        font-size: 0.9em;
+    }
+}
+
+/* Fonctions scientifiques */
+.button[data-fn] {
+    background-color: var(--fn-bg);
+    color: var(--cyan);
+    border: 1px solid var(--cyan);
+    -webkit-backdrop-filter: blur(5px);
+    backdrop-filter: blur(5px);
+}
+
+.button[data-fn]:hover {
+    box-shadow: 0 0 10px var(--cyan);
+}
+
+.scientifiques {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-top: 15px;
+    transition: all 0.3s ease;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.scientifiques.hidden {
+    opacity: 0;
+    transform: translateY(-10px);
+    pointer-events: none;
+}
+
+#toggleScientific.active {
+    background-color: var(--cyan);
+    color: #000;
+    border-radius: 50%;
+}
+
+/* Bouton d'installation PWA */
+.install-button {
+    display: none;
+    background-color: var(--cyan);
+    color: #000;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 10px;
+    font-weight: bold;
+    cursor: pointer;
+    margin-top: 10px;
+    transition: background-color 0.3s ease;
+}
+
+.install-button:hover {
+    background-color: #00cccc;
+}
