@@ -1,72 +1,100 @@
 const screen = document.querySelector('.ecran');
 const preview = document.querySelector('.preview');
 const buttons = [...document.querySelectorAll('.button')];
-const historiqueList = document.getElementById('historiqueList'); // pour l'historique
+const historiqueList = document.getElementById('historiqueList');
+const toggleButton = document.getElementById('toggleScientific');
+const sciContainer = document.querySelector('.scientifiques');
 
-// Fonction principale
 let currentExpression = '';
 
+// Fonction scientifique pour les calculs
+const scientificFunctions = {
+    sin: (x) => Math.sin(x),
+    cos: (x) => Math.cos(x),
+    tan: (x) => Math.tan(x),
+    log: (x) => Math.log10(x),
+    ln: (x) => Math.log(x),
+    sqrt: (x) => Math.sqrt(x),
+    pow2: (x) => Math.pow(x, 2),
+    pow3: (x) => Math.pow(x, 3),
+    abs: (x) => Math.abs(x),
+    inv: (x) => 1 / x,
+    pi: () => Math.PI,
+    e: () => Math.E,
+};
+
+// Fonction de gestion des entrées
 function handleInput(value) {
     if (value === 'C') {
         currentExpression = '';
         screen.value = '';
         preview.value = '';
-    } else if (['sin', 'cos', 'tan', 'log'].includes(value)) {
-        try {
-            const num = parseFloat(currentExpression);
-            let result;
+        return;
+    }
 
-            if (value === 'sin') result = Math.sin(num);
-            if (value === 'cos') result = Math.cos(num);
-            if (value === 'tan') result = Math.tan(num);
-            if (value === 'log') result = Math.log10(num);
+    // Traitement des fonctions scientifiques
+    if (value in scientificFunctions) {
+        try {
+            const isConst = ['pi', 'e'].includes(value);
+            const num = isConst ? null : parseFloat(currentExpression || screen.value);
+            const result = scientificFunctions[value](num);
 
             screen.value = result;
-            preview.value = `${value}(${num})`;
+            preview.value = isConst ? value : `${value}(${num})`;
             currentExpression = result.toString();
-        } catch (e) {
+
+            addToHistorique(`${preview.value} = ${result}`);
+        } catch {
             screen.value = 'Erreur';
             preview.value = '';
         }
-    } else if (value === '=') {
+        return;
+    }
+
+    // Traitement du calcul (fonction "=")
+    if (value === '=') {
         try {
             const result = eval(currentExpression);
-
-            // Historique
-            const li = document.createElement('li');
-            li.textContent = `${currentExpression} = ${result}`;
-            historiqueList.appendChild(li);
+            addToHistorique(`${currentExpression} = ${result}`);
 
             screen.value = result;
             preview.value = currentExpression;
             currentExpression = result.toString();
-        } catch (e) {
+        } catch {
             screen.value = 'Erreur';
             preview.value = currentExpression;
         }
-    } else {
-        currentExpression += value;
-        preview.value = currentExpression;
+        return;
+    }
 
-        try {
-            // Calculer le résultat pendant la saisie
-            const result = eval(currentExpression);
-            screen.value = result;
-        } catch (e) {
-            screen.value = ''; // Pas encore une expression valide
-        }
+    // Traitement classique des entrées (ajout des valeurs)
+    currentExpression += value;
+    preview.value = currentExpression;
+
+    try {
+        screen.value = eval(currentExpression);
+    } catch {
+        screen.value = '';
     }
 }
 
-// Écouteur sur les boutons
+// Ajoute une entrée à l'historique
+function addToHistorique(entry) {
+    const li = document.createElement('li');
+    li.textContent = entry;
+    historiqueList.appendChild(li);
+    historiqueList.scrollTop = historiqueList.scrollHeight; // Scroll automatique
+}
+
+// Gestion des événements sur les boutons
 buttons.forEach(button => {
-    button.addEventListener('click', (e) => {
-        const value = e.currentTarget.dataset.key;
-        handleInput(value);
-    });
+    const key = button.dataset.key || button.dataset.fn;
+    if (key) {
+        button.addEventListener('click', () => handleInput(key));
+    }
 });
 
-// Écouteur clavier
+// Gestion des événements clavier
 document.addEventListener('keydown', (e) => {
     let key = e.key;
     if (key === 'Enter') key = '=';
@@ -79,8 +107,23 @@ document.addEventListener('keydown', (e) => {
     }
 });
 
-// Bouton mode sombre
-const darkModeButton = document.getElementById('darkModeButton');
-darkModeButton.addEventListener('click', () => {
+// Fonction pour activer/désactiver le mode sombre
+document.getElementById('darkModeButton').addEventListener('click', () => {
     document.body.classList.toggle("dark-mode");
 });
+
+// Fonction pour afficher/masquer les fonctions scientifiques
+toggleButton.addEventListener('click', () => {
+    sciContainer.classList.toggle('hidden');
+});
+
+// Enregistrement du Service Worker pour la PWA
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/service-worker.js').then((registration) => {
+            console.log('Service Worker enregistré avec succès:', registration);
+        }).catch((error) => {
+            console.log('L\'enregistrement du Service Worker a échoué:', error);
+        });
+    });
+}

@@ -1,3 +1,45 @@
+body {
+    margin: 0;
+    padding: 0;
+    background-image: url("images/space.jpg");
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    font-family: 'Orbitron', sans-serif;
+}
+
+/* Mode clair sur fond spatial */
+body:not(.dark-mode) {
+    color: #00ffff;
+}
+
+body:not(.dark-mode) .ecran,
+body:not(.dark-mode) .preview,
+body:not(.dark-mode) .button,
+body:not(.dark-mode) .historique h3,
+body:not(.dark-mode) .historique li {
+    color: #00ffff;
+    text-shadow: 0 0 5px #00ffff;
+}
+
+body:not(.dark-mode) .ecran {
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+body:not(.dark-mode) .preview {
+    background-color: rgba(0, 0, 0, 0.3);
+}
+
+body:not(.dark-mode) .button {
+    background-color: rgba(0, 0, 0, 0.6);
+    border: 1px solid #00ffff;
+}
+
+body:not(.dark-mode) .button:hover {
+    box-shadow: 0 0 10px #00ffff;
+}
+
+/* Calculatrice principale */
 .calculatrice {
     width: 350px;
     margin: 50px auto;
@@ -5,12 +47,12 @@
     background-color: #1c1c1c;
     border-radius: 20px;
     box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
-    font-family: 'Orbitron', sans-serif;
     color: #fff;
-    overflow: hidden; /* Évite le débordement */
+    overflow: hidden;
     box-sizing: border-box;
 }
 
+/* Conteneur écran */
 .ecran-container {
     width: 100%;
     box-sizing: border-box;
@@ -68,28 +110,25 @@
     cursor: pointer;
     text-align: center;
     transition: all 0.3s ease;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3), 0 0 15px 3px rgba(0, 255, 255, 0.7); /* Bordure néon bleu */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3), 0 0 15px 3px rgba(0, 255, 255, 0.7);
     box-sizing: border-box;
 }
 
-/* Bouton "C" en orange */
 .button[data-key="C"] {
     background-color: #FF5722;
 }
 
-/* Effet au survol des boutons */
 .button:hover {
     background-color: #444;
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4), 0 0 15px 5px rgba(255, 105, 180, 0.7); /* Effet néon au survol */
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4), 0 0 15px 5px rgba(255, 105, 180, 0.7);
 }
 
-/* Effet au clic des boutons */
 .button:active {
     background-color: #333;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3), 0 0 10px 3px rgba(0, 255, 255, 0.7); /* Effet néon au clic */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3), 0 0 10px 3px rgba(0, 255, 255, 0.7);
 }
 
-/* Bouton pour le mode sombre */
+/* Bouton mode sombre */
 #darkModeButton {
     font-size: 1.8em;
     cursor: pointer;
@@ -112,20 +151,20 @@
 .dark-mode .ecran {
     background-color: #444;
     color: white;
-    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3), 0 0 15px 3px rgba(0, 255, 255, 0.7); /* Néon bleu en mode sombre */
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3), 0 0 15px 3px rgba(0, 255, 255, 0.7);
 }
 
 .dark-mode .preview {
     background-color: #555;
     color: white;
     opacity: 1;
-    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3), 0 0 15px 3px rgba(255, 105, 180, 0.7); /* Néon rose en mode sombre */
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3), 0 0 15px 3px rgba(255, 105, 180, 0.7);
 }
 
 .dark-mode .button {
     background-color: #000;
     color: white;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3), 0 0 15px 3px rgba(0, 255, 255, 0.7); /* Néon bleu en mode sombre */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3), 0 0 15px 3px rgba(0, 255, 255, 0.7);
 }
 
 .dark-mode .button[data-key="C"] {
@@ -134,18 +173,15 @@
 
 .dark-mode .button:hover {
     background-color: #333;
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4), 0 0 15px 5px rgba(255, 105, 180, 0.7); /* Néon rose au survol */
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4), 0 0 15px 5px rgba(255, 105, 180, 0.7);
 }
 
 /* Historique */
 .historique {
     margin-top: 30px;
-}
-
-.historique h3 {
-    font-size: 1.2em;
-    margin-bottom: 10px;
-    color: #fff;
+    max-height: 200px;
+    overflow-y: auto;
+    padding-right: 10px;
 }
 
 .historique ul {
@@ -155,7 +191,6 @@
 
 .historique li {
     font-size: 1.1em;
-    color: #fff;
     padding: 5px;
     border-bottom: 1px solid #444;
 }
@@ -164,12 +199,66 @@
     border-bottom: none;
 }
 
-/* Mode clair (par défaut) */
-body:not(.dark-mode) .historique h3 {
-    color: #222;
+/* Responsive */
+@media screen and (max-width: 600px) {
+    .calculatrice {
+        width: 90%;
+        padding: 15px;
+    }
+
+    .button {
+        font-size: 1.2em;
+        padding: 15px;
+    }
+
+    .ecran {
+        font-size: 1.5em;
+    }
+
+    .preview {
+        font-size: 0.9em;
+    }
 }
 
-body:not(.dark-mode) .historique li {
+.button[data-fn] {
+    background-color: #112233;
+    color: #00ffff;
+    border: 1px solid #00ffff;
+}
+
+.button[data-fn]:hover {
+    box-shadow: 0 0 10px #00ffff;
+}
+
+/* Boutons scientifiques avec effet de flou */
+.button[data-fn] {
+    -webkit-backdrop-filter: blur(5px); /* Préfixe pour Safari */
+    backdrop-filter: blur(5px); /* Effet de flou standard */
+}
+
+/* Animation pour l'apparition des fonctions scientifiques */
+.scientifiques {
+    transition: all 0.3s ease;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.scientifiques.hidden {
+    opacity: 0;
+    transform: translateY(-10px);
+    pointer-events: none;
+}
+
+/* Active le bouton pour les fonctions scientifiques */
+#toggleScientific.active {
+    background-color: #00ffff;
     color: #000;
-    border-bottom: 1px solid #ccc;
+    border-radius: 50%;
+}
+
+.scientifiques {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-top: 15px;
 }
