@@ -163,3 +163,13 @@
 .historique li:last-child {
     border-bottom: none;
 }
+
+/* Mode clair (par défaut) */
+body:not(.dark-mode) .historique h3 {
+    color: #222;
+}
+
+body:not(.dark-mode) .historique li {
+    color: #000;
+    border-bottom: 1px solid #ccc;
+}
