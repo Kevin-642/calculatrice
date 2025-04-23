@@ -3,19 +3,6 @@
 Une calculatrice futuriste avec un design inspiré de la NASA 🌌.  
 Fonctions scientifiques, thème sombre, PWA, support hors ligne... le tout embarqué dans une interface épurée et accessible.
 
-## 🛠️ Installation
-
-npm install
-
-💻 Lancer en local
-
-npm run serve
-
-Accède à http://localhost:8080 ou celui affiché dans ton terminal.
-
-🏗️ Build pour la production
-
-npm run build
 
 ## ✨ Fonctionnalités
 
@@ -33,17 +20,8 @@ npm run build
 calculatrice/
 │
 ├── src/               # Fichiers sources HTML, CSS, JS
-├── dist/              # Fichiers générés après build
 ├── public/ (si utilisé) # Fichiers statiques (images, manifest, icônes)
 └── package.json       # Dépendances et scripts
 
-🤖 Dépendances principales
-
-    Parcel – Bundler simple et puissant
-
-    http-server – Pour servir dist/ localement
-
-    rimraf – Pour nettoyer le dossier dist/ avant le build
-
-Développé avec ❤️ pour durer 1000 ans.
+🤖 Développé avec ❤️ pour durer 1000 ans.
 🪐 "To the stars, and beyond..."
