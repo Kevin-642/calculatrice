@@ -1,0 +1,202 @@
+* {
+    box-sizing: border-box;
+}
+
+/* Fond général */
+body {
+    font-family: 'Orbitron', sans-serif;
+    background-image: url("space.jpeg"); 
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    background-color: #0a0a0a;
+    color: #fff;
+    margin: 0;
+    padding: 20px;
+    backdrop-filter: blur(4px);
+}
+
+/* Mode sombre */
+body.dark-mode {
+    background-color: #121212;
+    color: #e0e0e0;
+}
+
+body.dark-mode .calculatrice {
+    background-color: rgba(0, 0, 0, 0.9);
+}
+
+body.dark-mode .button,
+body.dark-mode #toggleSci {
+    background-color: #333;
+    color: #e0e0e0;
+    border: 1px solid #e0e0e0;
+}
+
+body.dark-mode #darkModeButton {
+    color: #e0e0e0;
+}
+
+/* Calculatrice */
+.calculatrice {
+    width: 320px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: rgba(0, 0, 0, 0.8);
+    border-radius: 15px;
+    box-shadow: 0 0 20px #0ff;
+}
+
+/* Écran */
+.ecran-container {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 15px;
+}
+
+.ecran,
+.preview {
+    font-size: 1.4em;
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 5px;
+    background-color: #111;
+    color: #0ff;
+    text-align: right;
+    margin-bottom: 6px;
+    overflow-x: auto;
+}
+
+.preview {
+    font-size: 1em;
+    opacity: 0.6;
+}
+
+/* Grilles de touches */
+.touches,
+.touches.scientifiques,
+#scientificPanel.visible {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+/* Boutons classiques, dark mode et toggle scientific */
+.button,
+#toggleSci,
+#darkModeButton {
+    font-size: 1.2em;
+    padding: 15px;
+    background-color: #1c1c1c;
+    color: #fff;
+    border: 1px solid #0ff;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.3s, transform 0.2s;
+    font-family: 'Orbitron', sans-serif;
+}
+
+.button:hover,
+#toggleSci:hover,
+#darkModeButton:hover {
+    background-color: #00ffff33;
+    transform: scale(1.05);
+}
+
+/* Boutons scientifiques (plus petits) */
+#scientificPanel .button {
+    font-size: 0.95em;
+    padding: 10px;
+    background-color: #1c1c1c;
+    color: #fff;
+    border: 1px solid #0ff;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.3s, transform 0.2s;
+    font-family: 'Orbitron', sans-serif;
+}
+
+#scientificPanel .button:hover {
+    background-color: #00ffff33;
+    transform: scale(1.05);
+}
+
+/* Mode sombre - styles uniformes */
+body.dark-mode .button,
+body.dark-mode #toggleSci,
+body.dark-mode #darkModeButton,
+body.dark-mode #scientificPanel .button {
+    background-color: #333;
+    color: #e0e0e0;
+    border: 1px solid #e0e0e0;
+}
+
+/* Historique */
+.historique {
+    margin-top: 20px;
+    padding: 10px;
+    background-color: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    max-width: 320px;
+    margin-left: auto;
+    margin-right: auto;
+    color: #0ff;
+}
+
+.historique h3 {
+    margin-bottom: 10px;
+    font-size: 1.1em;
+    text-align: center;
+    border-bottom: 1px solid #0ff;
+    padding-bottom: 5px;
+}
+
+.historique ul {
+    list-style: none;
+    padding: 0;
+    max-height: 150px;
+    overflow-y: auto;
+}
+
+.historique li {
+    padding: 5px 0;
+    border-bottom: 1px dashed #0ff;
+    font-size: 0.95em;
+}
+
+/* Panneau scientifique */
+#scientificPanel {
+    display: none;
+    padding: 10px;
+    animation: fadeIn 0.4s ease-in-out;
+    max-width: 100%;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+/* Animation douce NASA style */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Responsive */
+@media (max-width: 400px) {
+    .calculatrice {
+        width: 90%;
+    }
+
+    .touches,
+    .touches.scientifiques,
+    #scientificPanel.visible {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}

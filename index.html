@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Calculatrice NASA</title>
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <div class="calculatrice" role="application" aria-label="Calculatrice scientifique style NASA">
+    <!-- Écrans de la calculatrice -->
+    <div class="ecran-container">
+      <input type="text" id="preview" class="preview" readonly placeholder="Prévisualisation" aria-label="Prévisualisation du calcul" />
+      <input type="text" id="ecran" class="ecran" readonly placeholder="0" aria-label="Écran principal de la calculatrice" />
+    </div>
+
+    <!-- Touches numériques et opérateurs -->
+    <div class="touches" role="group" aria-label="Touches de la calculatrice">
+      <button class="button" data-key="7">7</button>
+      <button class="button" data-key="8">8</button>
+      <button class="button" data-key="9">9</button>
+      <button class="button" data-key="/">/</button>
+      <button class="button" data-key="4">4</button>
+      <button class="button" data-key="5">5</button>
+      <button class="button" data-key="6">6</button>
+      <button class="button" data-key="*">*</button>
+      <button class="button" data-key="1">1</button>
+      <button class="button" data-key="2">2</button>
+      <button class="button" data-key="3">3</button>
+      <button class="button" data-key="-">-</button>
+      <button class="button" data-key="0">0</button>
+      <button class="button" data-key=".">.</button>
+      <button class="button" data-key="=">=</button>
+      <button class="button" data-key="+">+</button>
+      <button class="button" data-key="C">C</button>
+      <button id="darkModeButton" aria-label="Activer ou désactiver le mode sombre" aria-pressed="false">🌒</button>
+      <button id="toggleSci" title="Afficher les fonctions scientifiques">🧪</button>
+    </div>
+
+    <!-- Section des touches scientifiques -->
+    <div class="touches scientifiques" id="scientificPanel" role="group" aria-label="Touches scientifiques">
+      <button class="button" data-key="sin">sin</button>
+      <button class="button" data-key="cos">cos</button>
+      <button class="button" data-key="tan">tan</button>
+      <button class="button" data-key="log">log</button>
+      <button class="button" data-key="ln">ln</button>
+      <button class="button" data-key="sqrt">√</button>
+      <button class="button" data-key="^2">x²</button>
+      <button class="button" data-key="pi">π</button>
+      <button class="button" data-key="e">e</button>
+      <button class="button" data-key="exp">exp</button>
+    </div>
+  </div>
+
+  <!-- Historique des calculs -->
+  <div class="historique" aria-live="polite">
+    <h3>Historique des calculs</h3>
+    <ul id="historiqueList"></ul>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
