@@ -1,27 +1,50 @@
-# 🚀 Calculatrice Cosmique
+# Calculatrice Cosmique
 
-Une calculatrice futuriste avec un design inspiré de la NASA 🌌.  
-Fonctions scientifiques, thème sombre, PWA, support hors ligne... le tout embarqué dans une interface épurée et accessible.
+Calculatrice Android Flutter simple et scientifique, pensee pour une publication propre sur Google Play.
 
+## Fonctionnalites
 
-## ✨ Fonctionnalités
+- Operations de base avec priorite mathematique.
+- Parentheses, nombres decimaux et suppression rapide.
+- Fonctions scientifiques: sin, cos, tan, log, ln, sqrt, x2, pi, e, exp.
+- Historique local des derniers calculs.
+- Mode contraste eleve.
+- Fonctionne hors ligne et ne demande aucune permission Android.
 
-    🌒 Mode sombre NASA-style
+## Developpement
 
-    🧪 Fonctions scientifiques : sin, cos, tan, ln, log, π, etc.
+```powershell
+flutter pub get
+flutter analyze
+flutter test
+flutter run
+```
 
-    📱 PWA : installable sur mobile et desktop
+## Build Play Store
 
-    🔌 Fonctionnement hors ligne via Service Worker
+Avant l'envoi sur Google Play, cree une cle de signature Android et ajoute un fichier `key.properties` a la racine du projet. Ce fichier est ignore par Git.
 
-    ♿ Accessibilité optimisée (ARIA, lecteurs d'écran)
+Exemple de `key.properties`:
 
-📁 Structure du projet
-calculatrice/
-│
-├── src/               # Fichiers sources HTML, CSS, JS
-├── public/ (si utilisé) # Fichiers statiques (images, manifest, icônes)
-└── package.json       # Dépendances et scripts
+```properties
+storePassword=mot_de_passe_du_store
+keyPassword=mot_de_passe_de_la_cle
+keyAlias=upload
+storeFile=C:/chemin/vers/upload-keystore.jks
+```
 
-🤖 Développé avec ❤️ pour durer 1000 ans.
-🪐 "To the stars, and beyond..."
+Puis genere l'Android App Bundle:
+
+```powershell
+flutter build appbundle --release
+```
+
+Le fichier a envoyer dans Play Console sera dans:
+
+```text
+build/app/outputs/bundle/release/app-release.aab
+```
+
+## Publication
+
+Consulte [PLAY_STORE_CHECKLIST.md](PLAY_STORE_CHECKLIST.md) avant de publier.
