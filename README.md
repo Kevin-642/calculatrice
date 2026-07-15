@@ -1,15 +1,33 @@
 # Calculatrice Cosmique
 
-Calculatrice Android Flutter simple et scientifique, pensee pour une publication propre sur Google Play.
+Calculatrice Android Flutter simple et scientifique, pensée pour une publication propre sur Google Play.
 
 ## Fonctionnalites
 
-- Operations de base avec priorite mathematique.
-- Parentheses, nombres decimaux et suppression rapide.
-- Fonctions scientifiques: sin, cos, tan, log, ln, sqrt, x2, pi, e, exp.
-- Historique local des derniers calculs.
-- Mode contraste eleve.
+- Opérations de base avec priorité mathématique.
+- Parenthèses, puissances, notation scientifique et multiplication implicite.
+- Point ou virgule pour saisir les nombres décimaux.
+- Fonctions scientifiques : trigonométrie, logarithmes, racine, factorielle,
+  pourcentage, inverse, valeur absolue, exponentielle, π et e.
+- Modes degrés et radians.
+- Mémoire MC, MR, M+ et M−, conservée après la fermeture.
+- Historique local interactif des 12 derniers calculs, conservé après la fermeture.
+- Appui long sur la touche de suppression pour effacer l’expression.
+- Mode contraste élevé conservé entre les sessions.
+- Messages explicites pour les opérations impossibles.
+- Ouverture cosmique animée, splash Android sombre, nébuleuses, orbites et étoiles.
 - Fonctionne hors ligne et ne demande aucune permission Android.
+
+## Architecture
+
+- `lib/calculator_engine.dart` : analyse et évaluation sécurisée des expressions.
+- `lib/calculator_controller.dart` : état, règles de saisie et opérations scientifiques.
+- `lib/calculator_preferences.dart` : persistance locale des réglages et de l’historique.
+- `lib/main.dart` : interface Flutter et composants visuels.
+
+Les fichiers `index.html`, `style.css` et `app.js` appartiennent à l’ancien prototype
+web. Ils sont conservés uniquement comme référence et ne font pas partie de
+l’application Android publiée.
 
 ## Developpement
 
@@ -22,7 +40,8 @@ flutter run
 
 ## Build Play Store
 
-Avant l'envoi sur Google Play, cree une cle de signature Android et ajoute un fichier `key.properties` a la racine du projet. Ce fichier est ignore par Git.
+Avant l’envoi sur Google Play, crée une clé de signature Android et ajoute un fichier
+`key.properties` à la racine du projet. Ce fichier est ignoré par Git.
 
 Exemple de `key.properties`:
 
@@ -33,13 +52,13 @@ keyAlias=upload
 storeFile=C:/chemin/vers/upload-keystore.jks
 ```
 
-Puis genere l'Android App Bundle:
+Puis génère l’Android App Bundle :
 
 ```powershell
 flutter build appbundle --release
 ```
 
-Le fichier a envoyer dans Play Console sera dans:
+Le fichier à envoyer dans Play Console sera dans :
 
 ```text
 build/app/outputs/bundle/release/app-release.aab
