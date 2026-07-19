@@ -5,7 +5,7 @@
 <fr-FR>
 La calculatrice passe à la vitesse interstellaire : fonctions scientifiques imbriquées, ANS, pourcentages intelligents et précision décimale renforcée.
 Découvrez le grapheur interactif, les conversions hors ligne, l’édition et la copie des expressions, ainsi qu’un historique recherchable avec favoris.
-Interface cosmique animée, retours haptiques, meilleure accessibilité et adaptation aux écrans en mode paysage.
+Interface cosmique animée et plus compacte : l’historique reste visible sans défilement, avec retours haptiques, meilleure accessibilité et adaptation au mode paysage.
 </fr-FR>
 
 ## Validation

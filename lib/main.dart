@@ -253,10 +253,10 @@ class _CalculatorScreenState extends State<CalculatorScreen>
                               ),
                               child: Padding(
                                 padding: const EdgeInsets.fromLTRB(
-                                  16,
                                   12,
-                                  16,
-                                  16,
+                                  8,
+                                  12,
+                                  10,
                                 ),
                                 child: Column(
                                   children: <Widget>[
@@ -267,7 +267,7 @@ class _CalculatorScreenState extends State<CalculatorScreen>
                                         _controller.toggleHighContrast();
                                       },
                                     ),
-                                    const SizedBox(height: 14),
+                                    const SizedBox(height: 8),
                                     AnimatedBuilder(
                                       animation: _resultPulse,
                                       builder: (context, child) {
@@ -291,7 +291,7 @@ class _CalculatorScreenState extends State<CalculatorScreen>
                                             _copyText(_controller.display),
                                       ),
                                     ),
-                                    const SizedBox(height: 14),
+                                    const SizedBox(height: 8),
                                     Expanded(
                                       child: SingleChildScrollView(
                                         child: Column(
@@ -353,7 +353,7 @@ class _CalculatorScreenState extends State<CalculatorScreen>
                                               onLongPress:
                                                   _controller.handleLongPress,
                                             ),
-                                            const SizedBox(height: 12),
+                                            const SizedBox(height: 8),
                                             _ScientificToggle(
                                               visible:
                                                   _controller.scientificVisible,
@@ -370,7 +370,7 @@ class _CalculatorScreenState extends State<CalculatorScreen>
                                                   ? Padding(
                                                       padding:
                                                           const EdgeInsets.only(
-                                                            top: 12,
+                                                            top: 8,
                                                           ),
                                                       child: Column(
                                                         children: <Widget>[
@@ -501,7 +501,7 @@ class _CalculatorScreenState extends State<CalculatorScreen>
                                                             onTap: _handleKey,
                                                           ),
                                                           const SizedBox(
-                                                            height: 10,
+                                                            height: 8,
                                                           ),
                                                           _AngleModeToggle(
                                                             mode: _controller
@@ -518,7 +518,7 @@ class _CalculatorScreenState extends State<CalculatorScreen>
                                                     )
                                                   : const SizedBox.shrink(),
                                             ),
-                                            const SizedBox(height: 12),
+                                            const SizedBox(height: 8),
                                             Row(
                                               children: <Widget>[
                                                 Expanded(
@@ -530,15 +530,22 @@ class _CalculatorScreenState extends State<CalculatorScreen>
                                                     label: const Text(
                                                       'Grapheur',
                                                     ),
-                                                    style:
-                                                        OutlinedButton.styleFrom(
-                                                          foregroundColor:
-                                                              colors.accent,
-                                                          side: BorderSide(
-                                                            color: colors
-                                                                .goldBorder,
+                                                    style: OutlinedButton.styleFrom(
+                                                      foregroundColor:
+                                                          colors.accent,
+                                                      minimumSize: const Size(
+                                                        0,
+                                                        42,
+                                                      ),
+                                                      padding:
+                                                          const EdgeInsets.symmetric(
+                                                            horizontal: 8,
                                                           ),
-                                                        ),
+                                                      side: BorderSide(
+                                                        color:
+                                                            colors.goldBorder,
+                                                      ),
+                                                    ),
                                                   ),
                                                 ),
                                                 const SizedBox(width: 10),
@@ -551,20 +558,27 @@ class _CalculatorScreenState extends State<CalculatorScreen>
                                                     label: const Text(
                                                       'Conversions',
                                                     ),
-                                                    style:
-                                                        OutlinedButton.styleFrom(
-                                                          foregroundColor:
-                                                              colors.accent,
-                                                          side: BorderSide(
-                                                            color: colors
-                                                                .goldBorder,
+                                                    style: OutlinedButton.styleFrom(
+                                                      foregroundColor:
+                                                          colors.accent,
+                                                      minimumSize: const Size(
+                                                        0,
+                                                        42,
+                                                      ),
+                                                      padding:
+                                                          const EdgeInsets.symmetric(
+                                                            horizontal: 8,
                                                           ),
-                                                        ),
+                                                      side: BorderSide(
+                                                        color:
+                                                            colors.goldBorder,
+                                                      ),
+                                                    ),
                                                   ),
                                                 ),
                                               ],
                                             ),
-                                            const SizedBox(height: 12),
+                                            const SizedBox(height: 8),
                                             _HistoryPanel(
                                               history: _controller.history,
                                               pinned: _controller.pinnedHistory,
@@ -1001,7 +1015,7 @@ class _Header extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(10),
+      padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
         color: colors.panel.withValues(alpha: 0.48),
         borderRadius: BorderRadius.circular(18),
@@ -1013,10 +1027,10 @@ class _Header extends StatelessWidget {
       child: Row(
         children: <Widget>[
           Container(
-            width: 58,
-            height: 58,
+            width: 46,
+            height: 46,
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(13),
               boxShadow: <BoxShadow>[
                 BoxShadow(color: colors.warmGlow, blurRadius: 18),
               ],
@@ -1024,28 +1038,32 @@ class _Header extends StatelessWidget {
             clipBehavior: Clip.antiAlias,
             child: Image.asset('assets/brand/logo.png', fit: BoxFit.cover),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 Text(
-                  'Calculatrice\nCosmique',
+                  'Calculatrice Cosmique',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: 23,
-                    height: 0.98,
-                    letterSpacing: 0.7,
+                    fontSize: 19,
+                    height: 1,
+                    letterSpacing: 0.3,
                     fontWeight: FontWeight.w700,
                     shadows: <Shadow>[
                       Shadow(color: colors.glow, blurRadius: 10),
                     ],
                   ),
                 ),
-                const SizedBox(height: 5),
+                const SizedBox(height: 3),
                 Text(
                   'Simple, scientifique, hors ligne',
-                  style: TextStyle(color: colors.muted, fontSize: 12.5),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(color: colors.muted, fontSize: 10.5),
                 ),
               ],
             ),
@@ -1094,7 +1112,7 @@ class _DisplayPanel extends StatelessWidget {
         onLongPress: onLongPress,
         child: Container(
           width: double.infinity,
-          padding: const EdgeInsets.all(18),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
           decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
@@ -1119,9 +1137,9 @@ class _DisplayPanel extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.fade,
                 softWrap: false,
-                style: TextStyle(color: colors.muted, fontSize: 16),
+                style: TextStyle(color: colors.muted, fontSize: 14),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 4),
               FittedBox(
                 fit: BoxFit.scaleDown,
                 alignment: Alignment.centerRight,
@@ -1130,7 +1148,7 @@ class _DisplayPanel extends StatelessWidget {
                   maxLines: 1,
                   style: TextStyle(
                     color: colors.accent,
-                    fontSize: 42,
+                    fontSize: 34,
                     fontWeight: FontWeight.w700,
                     shadows: <Shadow>[
                       Shadow(color: colors.glow, blurRadius: 12),
@@ -1139,13 +1157,13 @@ class _DisplayPanel extends StatelessWidget {
                 ),
               ),
               if (errorMessage != null) ...<Widget>[
-                const SizedBox(height: 8),
+                const SizedBox(height: 4),
                 Text(
                   errorMessage!,
                   textAlign: TextAlign.right,
                   style: TextStyle(
                     color: colors.warningBorder,
-                    fontSize: 13,
+                    fontSize: 12,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -1181,9 +1199,9 @@ class _KeyGrid extends StatelessWidget {
       physics: const NeverScrollableScrollPhysics(),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: columns,
-        crossAxisSpacing: 10,
-        mainAxisSpacing: 10,
-        childAspectRatio: columns == 5 ? 1.15 : 1.25,
+        crossAxisSpacing: 6,
+        mainAxisSpacing: 6,
+        childAspectRatio: columns == 5 ? 1.28 : 1.55,
       ),
       itemBuilder: (context, index) {
         final key = keys[index];
@@ -1248,7 +1266,7 @@ class _CalculatorButton extends StatelessWidget {
               background.withValues(alpha: 0.58),
             ],
           ),
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(12),
           border: Border.all(color: borderColor.withValues(alpha: 0.82)),
           boxShadow: <BoxShadow>[
             BoxShadow(
@@ -1260,18 +1278,18 @@ class _CalculatorButton extends StatelessWidget {
         ),
         child: Material(
           color: Colors.transparent,
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(12),
           child: InkWell(
             onTap: onTap,
             onLongPress: onLongPress,
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(12),
             child: Center(
               child: keyData.icon == null
                   ? Text(
                       keyData.label ?? keyData.value,
                       style: TextStyle(
                         color: textColor,
-                        fontSize: 21,
+                        fontSize: 19,
                         fontWeight: FontWeight.w700,
                         shadows: <Shadow>[
                           Shadow(
@@ -1305,7 +1323,7 @@ class _ScientificToggle extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       width: double.infinity,
-      height: 48,
+      height: 42,
       child: OutlinedButton.icon(
         onPressed: onTap,
         icon: Icon(visible ? Icons.science : Icons.functions),
@@ -1317,7 +1335,7 @@ class _ScientificToggle extends StatelessWidget {
           backgroundColor: colors.panel.withValues(alpha: 0.48),
           side: BorderSide(color: colors.goldBorder.withValues(alpha: 0.72)),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(12),
           ),
         ),
       ),
@@ -1416,11 +1434,11 @@ class _HistoryPanelState extends State<_HistoryPanel> {
           });
     return Container(
       width: double.infinity,
-      constraints: const BoxConstraints(minHeight: 90),
-      padding: const EdgeInsets.all(14),
+      constraints: const BoxConstraints(minHeight: 70),
+      padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
         color: colors.panel.withValues(alpha: 0.62),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(13),
         border: Border.all(color: colors.border.withValues(alpha: 0.72)),
         boxShadow: <BoxShadow>[
           BoxShadow(color: colors.glow.withValues(alpha: 0.7), blurRadius: 18),
@@ -1437,7 +1455,7 @@ class _HistoryPanelState extends State<_HistoryPanel> {
                   style: TextStyle(
                     color: colors.muted,
                     fontWeight: FontWeight.w700,
-                    fontSize: 14,
+                    fontSize: 13,
                   ),
                 ),
               ),
@@ -1455,7 +1473,7 @@ class _HistoryPanelState extends State<_HistoryPanel> {
               ),
             ],
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 4),
           if (widget.history.length > 5) ...<Widget>[
             TextField(
               onChanged: (value) => setState(() => _query = value),

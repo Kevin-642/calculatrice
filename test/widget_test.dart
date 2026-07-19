@@ -103,7 +103,7 @@ void main() {
     await tester.pump(const Duration(seconds: 3));
     await tester.pump(const Duration(seconds: 3));
     expect(find.text('INITIALISATION STELLAIRE'), findsNothing);
-    expect(find.text('Calculatrice\nCosmique'), findsOneWidget);
+    expect(find.text('Calculatrice Cosmique'), findsOneWidget);
 
     await tester.binding.setSurfaceSize(null);
   });
@@ -171,6 +171,27 @@ void main() {
     await tester.pump(const Duration(milliseconds: 500));
     expect(find.text('Convertisseur'), findsOneWidget);
     expect(find.text('Catégorie'), findsOneWidget);
+
+    await tester.binding.setSurfaceSize(null);
+  });
+
+  testWidgets('shows history without scrolling in compact portrait layout', (
+    WidgetTester tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    await tester.pumpWidget(const CalculatorApp());
+    await tester.pump(const Duration(seconds: 1));
+
+    final historyTitle = find.text('Historique');
+    expect(historyTitle, findsOneWidget);
+    expect(tester.getBottomLeft(historyTitle).dy, lessThan(820));
+
+    final sevenButton = find.ancestor(
+      of: find.text('7'),
+      matching: find.byType(InkWell),
+    );
+    expect(sevenButton, findsOneWidget);
+    expect(tester.getSize(sevenButton).height, greaterThanOrEqualTo(48));
 
     await tester.binding.setSurfaceSize(null);
   });
