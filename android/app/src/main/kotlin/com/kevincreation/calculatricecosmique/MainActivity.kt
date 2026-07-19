@@ -22,20 +22,30 @@ class MainActivity : FlutterActivity() {
                         val history = List(historyArray.length()) { index ->
                             historyArray.getString(index)
                         }
+                        val pinnedJson = preferences.getString("pinnedHistory", "[]") ?: "[]"
+                        val pinnedArray = JSONArray(pinnedJson)
+                        val pinnedHistory = List(pinnedArray.length()) { index ->
+                            pinnedArray.getString(index)
+                        }
                         result.success(
                             mapOf(
                                 "history" to history,
+                                "pinnedHistory" to pinnedHistory,
                                 "highContrast" to preferences.getBoolean("highContrast", false),
                                 "radians" to preferences.getBoolean("radians", false),
                                 "memory" to preferences.getFloat("memory", 0f).toDouble(),
+                                "launchSeen" to preferences.getBoolean("launchSeen", false),
                             ),
                         )
                     }
 
                     "save" -> {
                         val history = call.argument<List<String>>("history") ?: emptyList()
+                        val pinnedHistory =
+                            call.argument<List<String>>("pinnedHistory") ?: emptyList()
                         preferences.edit()
                             .putString("history", JSONArray(history).toString())
+                            .putString("pinnedHistory", JSONArray(pinnedHistory).toString())
                             .putBoolean(
                                 "highContrast",
                                 call.argument<Boolean>("highContrast") ?: false,
@@ -44,6 +54,10 @@ class MainActivity : FlutterActivity() {
                             .putFloat(
                                 "memory",
                                 (call.argument<Double>("memory") ?: 0.0).toFloat(),
+                            )
+                            .putBoolean(
+                                "launchSeen",
+                                call.argument<Boolean>("launchSeen") ?: false,
                             )
                             .apply()
                         result.success(null)

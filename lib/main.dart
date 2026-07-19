@@ -1,4 +1,7 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'calculator_controller.dart';
 import 'calculator_preferences.dart';
@@ -35,9 +38,11 @@ class CalculatorScreen extends StatefulWidget {
 }
 
 class _CalculatorScreenState extends State<CalculatorScreen>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late final CalculatorController _controller;
   late final AnimationController _cosmicEntrance;
+  late final AnimationController _spaceMotion;
+  late final AnimationController _resultPulse;
   late final Animation<double> _contentReveal;
 
   @override
@@ -46,20 +51,42 @@ class _CalculatorScreenState extends State<CalculatorScreen>
     _controller = CalculatorController(
       preferences: NativeCalculatorPreferences(),
     )..addListener(_onControllerChanged);
-    _controller.initialize();
     _cosmicEntrance = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1900),
+    );
+    _spaceMotion = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 18),
+    );
+    _resultPulse = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 420),
     );
     _contentReveal = CurvedAnimation(
       parent: _cosmicEntrance,
       curve: const Interval(0.22, 0.78, curve: Curves.easeOutCubic),
     );
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted && !_cosmicEntrance.isCompleted) {
-        _cosmicEntrance.forward();
-      }
+      _initializeExperience();
     });
+  }
+
+  Future<void> _initializeExperience() async {
+    await _controller.initialize();
+    if (!mounted) {
+      return;
+    }
+    if (_controller.launchSeen) {
+      _cosmicEntrance.duration = const Duration(milliseconds: 650);
+    }
+    if (MediaQuery.disableAnimationsOf(context)) {
+      _cosmicEntrance.value = 1;
+    } else {
+      _cosmicEntrance.forward();
+      _spaceMotion.repeat();
+    }
+    _controller.markLaunchSeen();
   }
 
   @override
@@ -68,6 +95,8 @@ class _CalculatorScreenState extends State<CalculatorScreen>
       ..removeListener(_onControllerChanged)
       ..dispose();
     _cosmicEntrance.dispose();
+    _spaceMotion.dispose();
+    _resultPulse.dispose();
     super.dispose();
   }
 
@@ -77,7 +106,91 @@ class _CalculatorScreenState extends State<CalculatorScreen>
     if (MediaQuery.disableAnimationsOf(context) &&
         !_cosmicEntrance.isCompleted) {
       _cosmicEntrance.value = 1;
+      _spaceMotion.stop();
     }
+  }
+
+  void _handleKey(String key) {
+    if (key == '=') {
+      HapticFeedback.mediumImpact();
+      _resultPulse.forward(from: 0);
+    } else {
+      HapticFeedback.selectionClick();
+    }
+    _controller.handleKey(key);
+  }
+
+  Future<void> _editExpression() async {
+    final textController = TextEditingController(text: _controller.expression);
+    textController.selection = TextSelection.collapsed(
+      offset: textController.text.length,
+    );
+    final expression = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Modifier l’expression'),
+        content: TextField(
+          controller: textController,
+          autofocus: true,
+          keyboardType: TextInputType.text,
+          decoration: const InputDecoration(
+            hintText: 'Ex. sin(30)+sqrt(16)',
+            border: OutlineInputBorder(),
+          ),
+          onSubmitted: (value) => Navigator.pop(context, value),
+        ),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Annuler'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, textController.text),
+            child: const Text('Appliquer'),
+          ),
+        ],
+      ),
+    );
+    textController.dispose();
+    if (expression != null) {
+      _controller.setExpression(expression);
+    }
+  }
+
+  Future<void> _copyText(String value) async {
+    await Clipboard.setData(ClipboardData(text: value));
+    if (mounted) {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          const SnackBar(
+            content: Text('Copié dans le presse-papiers'),
+            duration: Duration(seconds: 1),
+          ),
+        );
+    }
+  }
+
+  void _showGraph() {
+    final expression = _controller.expression.toLowerCase().contains('x')
+        ? _controller.expression
+        : 'sin(x)';
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) =>
+          _GraphSheet(initialExpression: expression, controller: _controller),
+    );
+  }
+
+  void _showConversions() {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => const _ConversionSheet(),
+    );
   }
 
   void _onControllerChanged() {
@@ -113,8 +226,15 @@ class _CalculatorScreenState extends State<CalculatorScreen>
             child: Stack(
               children: <Widget>[
                 Positioned.fill(
-                  child: CustomPaint(
-                    painter: _GalaxyPainter(colors, reveal: progress),
+                  child: AnimatedBuilder(
+                    animation: _spaceMotion,
+                    builder: (context, child) => CustomPaint(
+                      painter: _GalaxyPainter(
+                        colors,
+                        reveal: progress,
+                        drift: _spaceMotion.value,
+                      ),
+                    ),
                   ),
                 ),
                 Opacity(
@@ -126,7 +246,11 @@ class _CalculatorScreenState extends State<CalculatorScreen>
                         builder: (context, constraints) {
                           return Center(
                             child: ConstrainedBox(
-                              constraints: const BoxConstraints(maxWidth: 460),
+                              constraints: BoxConstraints(
+                                maxWidth: constraints.maxWidth > 700
+                                    ? 820
+                                    : 460,
+                              ),
                               child: Padding(
                                 padding: const EdgeInsets.fromLTRB(
                                   16,
@@ -144,11 +268,28 @@ class _CalculatorScreenState extends State<CalculatorScreen>
                                       },
                                     ),
                                     const SizedBox(height: 14),
-                                    _DisplayPanel(
-                                      preview: _controller.preview,
-                                      display: _controller.display,
-                                      errorMessage: _controller.errorMessage,
-                                      colors: colors,
+                                    AnimatedBuilder(
+                                      animation: _resultPulse,
+                                      builder: (context, child) {
+                                        final pulse =
+                                            math.sin(
+                                              _resultPulse.value * math.pi,
+                                            ) *
+                                            0.025;
+                                        return Transform.scale(
+                                          scale: 1 + pulse,
+                                          child: child,
+                                        );
+                                      },
+                                      child: _DisplayPanel(
+                                        preview: _controller.preview,
+                                        display: _controller.display,
+                                        errorMessage: _controller.errorMessage,
+                                        colors: colors,
+                                        onTap: _editExpression,
+                                        onLongPress: () =>
+                                            _copyText(_controller.display),
+                                      ),
                                     ),
                                     const SizedBox(height: 14),
                                     Expanded(
@@ -208,7 +349,7 @@ class _CalculatorScreenState extends State<CalculatorScreen>
                                                 ),
                                               ],
                                               colors: colors,
-                                              onTap: _controller.handleKey,
+                                              onTap: _handleKey,
                                               onLongPress:
                                                   _controller.handleLongPress,
                                             ),
@@ -344,11 +485,20 @@ class _CalculatorScreenState extends State<CalculatorScreen>
                                                                 style: KeyStyle
                                                                     .secondary,
                                                               ),
+                                                              CalculatorKey(
+                                                                'ANS',
+                                                                style: KeyStyle
+                                                                    .secondary,
+                                                              ),
+                                                              CalculatorKey(
+                                                                'x',
+                                                                style: KeyStyle
+                                                                    .secondary,
+                                                              ),
                                                             ],
                                                             columns: 5,
                                                             colors: colors,
-                                                            onTap: _controller
-                                                                .handleKey,
+                                                            onTap: _handleKey,
                                                           ),
                                                           const SizedBox(
                                                             height: 10,
@@ -369,8 +519,55 @@ class _CalculatorScreenState extends State<CalculatorScreen>
                                                   : const SizedBox.shrink(),
                                             ),
                                             const SizedBox(height: 12),
+                                            Row(
+                                              children: <Widget>[
+                                                Expanded(
+                                                  child: OutlinedButton.icon(
+                                                    onPressed: _showGraph,
+                                                    icon: const Icon(
+                                                      Icons.show_chart,
+                                                    ),
+                                                    label: const Text(
+                                                      'Grapheur',
+                                                    ),
+                                                    style:
+                                                        OutlinedButton.styleFrom(
+                                                          foregroundColor:
+                                                              colors.accent,
+                                                          side: BorderSide(
+                                                            color: colors
+                                                                .goldBorder,
+                                                          ),
+                                                        ),
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 10),
+                                                Expanded(
+                                                  child: OutlinedButton.icon(
+                                                    onPressed: _showConversions,
+                                                    icon: const Icon(
+                                                      Icons.swap_horiz,
+                                                    ),
+                                                    label: const Text(
+                                                      'Conversions',
+                                                    ),
+                                                    style:
+                                                        OutlinedButton.styleFrom(
+                                                          foregroundColor:
+                                                              colors.accent,
+                                                          side: BorderSide(
+                                                            color: colors
+                                                                .goldBorder,
+                                                          ),
+                                                        ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            const SizedBox(height: 12),
                                             _HistoryPanel(
                                               history: _controller.history,
+                                              pinned: _controller.pinnedHistory,
                                               colors: colors,
                                               onClear:
                                                   _controller.history.isEmpty
@@ -378,6 +575,11 @@ class _CalculatorScreenState extends State<CalculatorScreen>
                                                   : _controller.clearHistory,
                                               onSelected:
                                                   _controller.restoreHistory,
+                                              onDelete:
+                                                  _controller.deleteHistory,
+                                              onPin: _controller
+                                                  .toggleHistoryPinned,
+                                              onCopy: _copyText,
                                             ),
                                           ],
                                         ),
@@ -612,10 +814,11 @@ class _CosmicPortalPainter extends CustomPainter {
 }
 
 class _GalaxyPainter extends CustomPainter {
-  _GalaxyPainter(this.colors, {required this.reveal});
+  _GalaxyPainter(this.colors, {required this.reveal, required this.drift});
 
   final _ContrastPalette colors;
   final double reveal;
+  final double drift;
 
   static const List<_Star> _stars = <_Star>[
     _Star(0.08, 0.10, 1.5),
@@ -706,8 +909,13 @@ class _GalaxyPainter extends CustomPainter {
 
     final starPaint = Paint()
       ..color = Colors.white.withValues(alpha: 0.35 + reveal * 0.65);
-    for (final star in _stars) {
-      final offset = Offset(size.width * star.x, size.height * star.y);
+    for (var index = 0; index < _stars.length; index++) {
+      final star = _stars[index];
+      final phase = drift * math.pi * 2 + index * 0.73;
+      final offset = Offset(
+        size.width * star.x + math.sin(phase) * 2.4,
+        size.height * star.y + math.cos(phase * 0.7) * 1.8,
+      );
       canvas.drawCircle(offset, star.radius, starPaint);
       canvas.drawLine(
         offset.translate(-star.radius * 2.2, 0),
@@ -765,7 +973,9 @@ class _GalaxyPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _GalaxyPainter oldDelegate) {
-    return oldDelegate.colors != colors || oldDelegate.reveal != reveal;
+    return oldDelegate.colors != colors ||
+        oldDelegate.reveal != reveal ||
+        oldDelegate.drift != drift;
   }
 }
 
@@ -861,75 +1071,87 @@ class _DisplayPanel extends StatelessWidget {
     required this.display,
     required this.errorMessage,
     required this.colors,
+    required this.onTap,
+    required this.onLongPress,
   });
 
   final String preview;
   final String display;
   final String? errorMessage;
   final _ContrastPalette colors;
+  final VoidCallback onTap;
+  final VoidCallback onLongPress;
 
   @override
   Widget build(BuildContext context) {
     return Semantics(
+      liveRegion: true,
       label: 'Ecran de la calculatrice',
       value: display.isEmpty ? 'Expression incomplete' : display,
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(18),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: <Color>[
-              colors.panel.withValues(alpha: 0.92),
-              colors.panelAlt.withValues(alpha: 0.78),
+      hint: 'Touchez pour modifier, appui long pour copier',
+      child: GestureDetector(
+        onTap: onTap,
+        onLongPress: onLongPress,
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: <Color>[
+                colors.panel.withValues(alpha: 0.92),
+                colors.panelAlt.withValues(alpha: 0.78),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: colors.border),
+            boxShadow: <BoxShadow>[
+              BoxShadow(color: colors.glow, blurRadius: 26, spreadRadius: 1),
+              BoxShadow(color: colors.warmGlow, blurRadius: 14),
             ],
           ),
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: colors.border),
-          boxShadow: <BoxShadow>[
-            BoxShadow(color: colors.glow, blurRadius: 26, spreadRadius: 1),
-            BoxShadow(color: colors.warmGlow, blurRadius: 14),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: <Widget>[
-            Text(
-              preview.isEmpty ? ' ' : preview,
-              maxLines: 1,
-              overflow: TextOverflow.fade,
-              softWrap: false,
-              style: TextStyle(color: colors.muted, fontSize: 16),
-            ),
-            const SizedBox(height: 8),
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              alignment: Alignment.centerRight,
-              child: Text(
-                display.isEmpty ? ' ' : display,
-                maxLines: 1,
-                style: TextStyle(
-                  color: colors.accent,
-                  fontSize: 42,
-                  fontWeight: FontWeight.w700,
-                  shadows: <Shadow>[Shadow(color: colors.glow, blurRadius: 12)],
-                ),
-              ),
-            ),
-            if (errorMessage != null) ...<Widget>[
-              const SizedBox(height: 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: <Widget>[
               Text(
-                errorMessage!,
-                textAlign: TextAlign.right,
-                style: TextStyle(
-                  color: colors.warningBorder,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
+                preview.isEmpty ? ' ' : preview,
+                maxLines: 1,
+                overflow: TextOverflow.fade,
+                softWrap: false,
+                style: TextStyle(color: colors.muted, fontSize: 16),
+              ),
+              const SizedBox(height: 8),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerRight,
+                child: Text(
+                  display.isEmpty ? ' ' : display,
+                  maxLines: 1,
+                  style: TextStyle(
+                    color: colors.accent,
+                    fontSize: 42,
+                    fontWeight: FontWeight.w700,
+                    shadows: <Shadow>[
+                      Shadow(color: colors.glow, blurRadius: 12),
+                    ],
+                  ),
                 ),
               ),
+              if (errorMessage != null) ...<Widget>[
+                const SizedBox(height: 8),
+                Text(
+                  errorMessage!,
+                  textAlign: TextAlign.right,
+                  style: TextStyle(
+                    color: colors.warningBorder,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );
@@ -1152,21 +1374,46 @@ class _AngleModeToggle extends StatelessWidget {
   }
 }
 
-class _HistoryPanel extends StatelessWidget {
+class _HistoryPanel extends StatefulWidget {
   const _HistoryPanel({
     required this.history,
+    required this.pinned,
     required this.colors,
     required this.onClear,
     required this.onSelected,
+    required this.onDelete,
+    required this.onPin,
+    required this.onCopy,
   });
 
   final List<String> history;
+  final Set<String> pinned;
   final _ContrastPalette colors;
   final VoidCallback? onClear;
   final ValueChanged<String> onSelected;
+  final ValueChanged<String> onDelete;
+  final ValueChanged<String> onPin;
+  final ValueChanged<String> onCopy;
+
+  @override
+  State<_HistoryPanel> createState() => _HistoryPanelState();
+}
+
+class _HistoryPanelState extends State<_HistoryPanel> {
+  String _query = '';
 
   @override
   Widget build(BuildContext context) {
+    final colors = widget.colors;
+    final visibleHistory =
+        widget.history
+            .where((item) => item.toLowerCase().contains(_query.toLowerCase()))
+            .toList(growable: false)
+          ..sort((left, right) {
+            final leftPinned = widget.pinned.contains(left);
+            final rightPinned = widget.pinned.contains(right);
+            return leftPinned == rightPinned ? 0 : (leftPinned ? -1 : 1);
+          });
     return Container(
       width: double.infinity,
       constraints: const BoxConstraints(minHeight: 90),
@@ -1195,7 +1442,7 @@ class _HistoryPanel extends StatelessWidget {
                 ),
               ),
               TextButton.icon(
-                onPressed: onClear,
+                onPressed: widget.onClear,
                 icon: const Icon(Icons.delete_sweep_outlined, size: 18),
                 label: const Text('RAZ'),
                 style: TextButton.styleFrom(
@@ -1209,44 +1456,649 @@ class _HistoryPanel extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 6),
-          if (history.isEmpty)
-            Text(
-              'Aucun calcul',
-              style: TextStyle(color: colors.muted.withValues(alpha: 0.75)),
-            )
-          else
-            ...history.map(
-              (item) => Padding(
-                padding: const EdgeInsets.only(bottom: 6),
-                child: InkWell(
-                  onTap: () => onSelected(item),
-                  borderRadius: BorderRadius.circular(8),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 4,
-                      vertical: 5,
-                    ),
-                    child: Row(
-                      children: <Widget>[
-                        Expanded(
-                          child: Text(
-                            item,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(color: Colors.white),
-                          ),
-                        ),
-                        Icon(Icons.replay, size: 16, color: colors.muted),
-                      ],
-                    ),
-                  ),
+          if (widget.history.length > 5) ...<Widget>[
+            TextField(
+              onChanged: (value) => setState(() => _query = value),
+              style: const TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                isDense: true,
+                hintText: 'Rechercher un calcul',
+                hintStyle: TextStyle(color: colors.muted),
+                prefixIcon: const Icon(Icons.search, size: 19),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
                 ),
               ),
             ),
+            const SizedBox(height: 8),
+          ],
+          if (visibleHistory.isEmpty)
+            Text(
+              widget.history.isEmpty ? 'Aucun calcul' : 'Aucun résultat',
+              style: TextStyle(color: colors.muted.withValues(alpha: 0.75)),
+            )
+          else
+            ...visibleHistory
+                .take(20)
+                .map(
+                  (item) => Padding(
+                    padding: const EdgeInsets.only(bottom: 6),
+                    child: InkWell(
+                      onTap: () => widget.onSelected(item),
+                      borderRadius: BorderRadius.circular(8),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 4,
+                          vertical: 5,
+                        ),
+                        child: Row(
+                          children: <Widget>[
+                            Expanded(
+                              child: Text(
+                                item,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(color: Colors.white),
+                              ),
+                            ),
+                            if (widget.pinned.contains(item))
+                              Icon(
+                                Icons.push_pin,
+                                size: 16,
+                                color: colors.accent,
+                              ),
+                            PopupMenuButton<_HistoryAction>(
+                              tooltip: 'Actions du calcul',
+                              icon: Icon(
+                                Icons.more_vert,
+                                size: 18,
+                                color: colors.muted,
+                              ),
+                              onSelected: (action) {
+                                switch (action) {
+                                  case _HistoryAction.copy:
+                                    widget.onCopy(item);
+                                  case _HistoryAction.pin:
+                                    widget.onPin(item);
+                                  case _HistoryAction.delete:
+                                    widget.onDelete(item);
+                                }
+                              },
+                              itemBuilder: (context) =>
+                                  <PopupMenuEntry<_HistoryAction>>[
+                                    const PopupMenuItem(
+                                      value: _HistoryAction.copy,
+                                      child: ListTile(
+                                        leading: Icon(Icons.copy),
+                                        title: Text('Copier'),
+                                      ),
+                                    ),
+                                    PopupMenuItem(
+                                      value: _HistoryAction.pin,
+                                      child: ListTile(
+                                        leading: Icon(
+                                          widget.pinned.contains(item)
+                                              ? Icons.push_pin_outlined
+                                              : Icons.push_pin,
+                                        ),
+                                        title: Text(
+                                          widget.pinned.contains(item)
+                                              ? 'Désépingler'
+                                              : 'Épingler',
+                                        ),
+                                      ),
+                                    ),
+                                    const PopupMenuItem(
+                                      value: _HistoryAction.delete,
+                                      child: ListTile(
+                                        leading: Icon(Icons.delete_outline),
+                                        title: Text('Supprimer'),
+                                      ),
+                                    ),
+                                  ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
         ],
       ),
     );
   }
+}
+
+enum _HistoryAction { copy, pin, delete }
+
+class _GraphSheet extends StatefulWidget {
+  const _GraphSheet({
+    required this.initialExpression,
+    required this.controller,
+  });
+
+  final String initialExpression;
+  final CalculatorController controller;
+
+  @override
+  State<_GraphSheet> createState() => _GraphSheetState();
+}
+
+class _GraphSheetState extends State<_GraphSheet> {
+  late final TextEditingController _expressionController;
+  double _range = 10;
+  double _centerX = 0;
+  double _scaleStartRange = 10;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _expressionController = TextEditingController(
+      text: widget.initialExpression,
+    );
+  }
+
+  @override
+  void dispose() {
+    _expressionController.dispose();
+    super.dispose();
+  }
+
+  double? _evaluate(double x) {
+    try {
+      final value = widget.controller.evaluateForGraph(
+        _expressionController.text,
+        x,
+      );
+      return value.isFinite ? value : null;
+    } on FormatException catch (error) {
+      _error = error.message.toString();
+      return null;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return DraggableScrollableSheet(
+      initialChildSize: 0.86,
+      minChildSize: 0.58,
+      maxChildSize: 0.96,
+      builder: (context, scrollController) => Material(
+        color: const Color(0xFF0B1024),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(26)),
+        child: SafeArea(
+          top: false,
+          child: ListView(
+            controller: scrollController,
+            padding: const EdgeInsets.all(18),
+            children: <Widget>[
+              Row(
+                children: <Widget>[
+                  const Expanded(
+                    child: Text(
+                      'Grapheur cosmique',
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: 'Fermer',
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.close),
+                  ),
+                ],
+              ),
+              const Text(
+                'Utilisez x, puis pincez ou glissez le graphique.',
+                style: TextStyle(color: Color(0xFFAEB9D7)),
+              ),
+              const SizedBox(height: 14),
+              TextField(
+                controller: _expressionController,
+                autocorrect: false,
+                decoration: InputDecoration(
+                  labelText: 'f(x)',
+                  hintText: 'sin(x) ou x^2',
+                  border: const OutlineInputBorder(),
+                  suffixIcon: IconButton(
+                    tooltip: 'Tracer',
+                    onPressed: () => setState(() => _error = null),
+                    icon: const Icon(Icons.play_arrow),
+                  ),
+                ),
+                onSubmitted: (_) => setState(() => _error = null),
+              ),
+              const SizedBox(height: 14),
+              AspectRatio(
+                aspectRatio: 1.25,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(18),
+                  child: GestureDetector(
+                    onScaleStart: (_) => _scaleStartRange = _range,
+                    onScaleUpdate: (details) {
+                      setState(() {
+                        _range = (_scaleStartRange / details.scale).clamp(
+                          1.0,
+                          100.0,
+                        );
+                        _centerX -=
+                            details.focalPointDelta.dx /
+                            context.size!.width *
+                            _range *
+                            2;
+                      });
+                    },
+                    child: CustomPaint(
+                      painter: _GraphPainter(
+                        evaluate: _evaluate,
+                        range: _range,
+                        centerX: _centerX,
+                        lineColor: theme.colorScheme.tertiary,
+                      ),
+                      child: const SizedBox.expand(),
+                    ),
+                  ),
+                ),
+              ),
+              if (_error != null) ...<Widget>[
+                const SizedBox(height: 8),
+                Text(_error!, style: TextStyle(color: theme.colorScheme.error)),
+              ],
+              Row(
+                children: <Widget>[
+                  const Text('Zoom'),
+                  Expanded(
+                    child: Slider(
+                      min: 1,
+                      max: 50,
+                      value: _range.clamp(1, 50),
+                      onChanged: (value) => setState(() => _range = value),
+                    ),
+                  ),
+                  Text('±${_range.toStringAsFixed(0)}'),
+                ],
+              ),
+              OutlinedButton.icon(
+                onPressed: () => setState(() {
+                  _range = 10;
+                  _centerX = 0;
+                }),
+                icon: const Icon(Icons.center_focus_strong),
+                label: const Text('Recentrer'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _GraphPainter extends CustomPainter {
+  const _GraphPainter({
+    required this.evaluate,
+    required this.range,
+    required this.centerX,
+    required this.lineColor,
+  });
+
+  final double? Function(double x) evaluate;
+  final double range;
+  final double centerX;
+  final Color lineColor;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    canvas.drawRect(
+      Offset.zero & size,
+      Paint()..color = const Color(0xFF050817),
+    );
+    final grid = Paint()
+      ..color = const Color(0xFF2B355A)
+      ..strokeWidth = 0.7;
+    for (var step = 0; step <= 10; step++) {
+      final x = size.width * step / 10;
+      final y = size.height * step / 10;
+      canvas
+        ..drawLine(Offset(x, 0), Offset(x, size.height), grid)
+        ..drawLine(Offset(0, y), Offset(size.width, y), grid);
+    }
+
+    final pixelsPerUnit = size.width / (range * 2);
+    final originX = size.width / 2 - centerX * pixelsPerUnit;
+    final originY = size.height / 2;
+    final axes = Paint()
+      ..color = const Color(0xFF9EABD0)
+      ..strokeWidth = 1.2;
+    if (originX >= 0 && originX <= size.width) {
+      canvas.drawLine(Offset(originX, 0), Offset(originX, size.height), axes);
+    }
+    canvas.drawLine(Offset(0, originY), Offset(size.width, originY), axes);
+
+    final path = Path();
+    var segmentStarted = false;
+    for (var pixel = 0.0; pixel <= size.width; pixel += 1.25) {
+      final x = centerX + (pixel - size.width / 2) / pixelsPerUnit;
+      final y = evaluate(x);
+      if (y == null || y.abs() > range * 8) {
+        segmentStarted = false;
+        continue;
+      }
+      final point = Offset(pixel, originY - y * pixelsPerUnit);
+      if (!segmentStarted) {
+        path.moveTo(point.dx, point.dy);
+        segmentStarted = true;
+      } else {
+        path.lineTo(point.dx, point.dy);
+      }
+    }
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = lineColor
+        ..strokeWidth = 2.4
+        ..style = PaintingStyle.stroke
+        ..strokeCap = StrokeCap.round,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _GraphPainter oldDelegate) {
+    return oldDelegate.range != range ||
+        oldDelegate.centerX != centerX ||
+        oldDelegate.evaluate != evaluate ||
+        oldDelegate.lineColor != lineColor;
+  }
+}
+
+class _ConversionSheet extends StatefulWidget {
+  const _ConversionSheet();
+
+  @override
+  State<_ConversionSheet> createState() => _ConversionSheetState();
+}
+
+class _ConversionSheetState extends State<_ConversionSheet> {
+  late final TextEditingController _valueController;
+  String _category = _conversionCategories.keys.first;
+  late String _from;
+  late String _to;
+
+  @override
+  void initState() {
+    super.initState();
+    _valueController = TextEditingController(text: '1');
+    _resetUnits();
+  }
+
+  void _resetUnits() {
+    final units = _conversionCategories[_category]!.units.keys.toList();
+    _from = units.first;
+    _to = units.length > 1 ? units[1] : units.first;
+  }
+
+  @override
+  void dispose() {
+    _valueController.dispose();
+    super.dispose();
+  }
+
+  String get _result {
+    final value = double.tryParse(_valueController.text.replaceAll(',', '.'));
+    if (value == null) {
+      return 'Valeur invalide';
+    }
+    final category = _conversionCategories[_category]!;
+    final base = category.units[_from]!.toBase(value);
+    final result = category.units[_to]!.fromBase(base);
+    return '${_formatConversion(result)} $_to';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final category = _conversionCategories[_category]!;
+    return DraggableScrollableSheet(
+      initialChildSize: 0.72,
+      minChildSize: 0.5,
+      maxChildSize: 0.9,
+      builder: (context, scrollController) => Material(
+        color: const Color(0xFF0B1024),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(26)),
+        child: SafeArea(
+          top: false,
+          child: ListView(
+            controller: scrollController,
+            padding: const EdgeInsets.all(18),
+            children: <Widget>[
+              Row(
+                children: <Widget>[
+                  const Expanded(
+                    child: Text(
+                      'Convertisseur',
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: 'Fermer',
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.close),
+                  ),
+                ],
+              ),
+              DropdownButtonFormField<String>(
+                value: _category,
+                decoration: const InputDecoration(
+                  labelText: 'Catégorie',
+                  border: OutlineInputBorder(),
+                ),
+                items: _conversionCategories.keys
+                    .map(
+                      (name) =>
+                          DropdownMenuItem(value: name, child: Text(name)),
+                    )
+                    .toList(),
+                onChanged: (value) {
+                  if (value != null) {
+                    setState(() {
+                      _category = value;
+                      _resetUnits();
+                    });
+                  }
+                },
+              ),
+              const SizedBox(height: 14),
+              TextField(
+                controller: _valueController,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                  signed: true,
+                ),
+                decoration: const InputDecoration(
+                  labelText: 'Valeur',
+                  border: OutlineInputBorder(),
+                ),
+                onChanged: (_) => setState(() {}),
+              ),
+              const SizedBox(height: 14),
+              Row(
+                children: <Widget>[
+                  Expanded(
+                    child: _UnitDropdown(
+                      label: 'De',
+                      value: _from,
+                      units: category.units.keys,
+                      onChanged: (value) => setState(() => _from = value),
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: 'Inverser les unités',
+                    onPressed: () => setState(() {
+                      final previous = _from;
+                      _from = _to;
+                      _to = previous;
+                    }),
+                    icon: const Icon(Icons.swap_horiz),
+                  ),
+                  Expanded(
+                    child: _UnitDropdown(
+                      label: 'Vers',
+                      value: _to,
+                      units: category.units.keys,
+                      onChanged: (value) => setState(() => _to = value),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 22),
+              Semantics(
+                liveRegion: true,
+                label: 'Résultat de la conversion',
+                value: _result,
+                child: Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF17213D),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: const Color(0xFFFFD58A)),
+                  ),
+                  child: SelectableText(
+                    _result,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: Color(0xFFFFE2B3),
+                      fontSize: 28,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _UnitDropdown extends StatelessWidget {
+  const _UnitDropdown({
+    required this.label,
+    required this.value,
+    required this.units,
+    required this.onChanged,
+  });
+
+  final String label;
+  final String value;
+  final Iterable<String> units;
+  final ValueChanged<String> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return DropdownButtonFormField<String>(
+      value: value,
+      decoration: InputDecoration(
+        labelText: label,
+        border: const OutlineInputBorder(),
+      ),
+      items: units
+          .map((unit) => DropdownMenuItem(value: unit, child: Text(unit)))
+          .toList(),
+      onChanged: (unit) {
+        if (unit != null) {
+          onChanged(unit);
+        }
+      },
+    );
+  }
+}
+
+class _ConversionCategory {
+  const _ConversionCategory(this.units);
+
+  final Map<String, _UnitConversion> units;
+}
+
+class _UnitConversion {
+  const _UnitConversion({required this.toBase, required this.fromBase});
+
+  final double Function(double) toBase;
+  final double Function(double) fromBase;
+}
+
+_UnitConversion _factor(double factor) => _UnitConversion(
+  toBase: (value) => value * factor,
+  fromBase: (value) => value / factor,
+);
+
+final Map<String, _ConversionCategory> _conversionCategories =
+    <String, _ConversionCategory>{
+      'Longueur': _ConversionCategory(<String, _UnitConversion>{
+        'mm': _factor(0.001),
+        'cm': _factor(0.01),
+        'm': _factor(1),
+        'km': _factor(1000),
+        'in': _factor(0.0254),
+        'ft': _factor(0.3048),
+        'mi': _factor(1609.344),
+      }),
+      'Masse': _ConversionCategory(<String, _UnitConversion>{
+        'mg': _factor(0.000001),
+        'g': _factor(0.001),
+        'kg': _factor(1),
+        't': _factor(1000),
+        'oz': _factor(0.028349523125),
+        'lb': _factor(0.45359237),
+      }),
+      'Température': _ConversionCategory(<String, _UnitConversion>{
+        '°C': _UnitConversion(
+          toBase: (value) => value,
+          fromBase: (value) => value,
+        ),
+        '°F': _UnitConversion(
+          toBase: (value) => (value - 32) * 5 / 9,
+          fromBase: (value) => value * 9 / 5 + 32,
+        ),
+        'K': _UnitConversion(
+          toBase: (value) => value - 273.15,
+          fromBase: (value) => value + 273.15,
+        ),
+      }),
+      'Vitesse': _ConversionCategory(<String, _UnitConversion>{
+        'm/s': _factor(1),
+        'km/h': _factor(1 / 3.6),
+        'mph': _factor(0.44704),
+        'nœud': _factor(0.514444),
+      }),
+      'Volume': _ConversionCategory(<String, _UnitConversion>{
+        'mL': _factor(0.001),
+        'cL': _factor(0.01),
+        'L': _factor(1),
+        'm³': _factor(1000),
+        'gal US': _factor(3.785411784),
+      }),
+      'Angle': _ConversionCategory(<String, _UnitConversion>{
+        'degré': _factor(math.pi / 180),
+        'radian': _factor(1),
+        'grade': _factor(math.pi / 200),
+      }),
+    };
+
+String _formatConversion(double value) {
+  if (value == value.roundToDouble() && value.abs() < 1e15) {
+    return value.toInt().toString();
+  }
+  if (value.abs() >= 1e12 || (value != 0 && value.abs() < 1e-9)) {
+    return value.toStringAsExponential(8);
+  }
+  return value.toStringAsPrecision(12).replaceFirst(RegExp(r'\.?0+$'), '');
 }
 
 class CalculatorKey {

@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 
@@ -18,6 +17,7 @@ class CalculatorController extends ChangeNotifier {
   final CalculatorEngine _engine;
   final CalculatorPreferences? _preferences;
   final List<String> _history = <String>[];
+  final Set<String> _pinnedHistory = <String>{};
 
   String _expression = '';
   String _display = '0';
@@ -26,8 +26,13 @@ class CalculatorController extends ChangeNotifier {
   bool _scientificVisible = false;
   bool _highContrast = false;
   bool _resultCommitted = false;
+  bool _launchSeen = false;
   AngleMode _angleMode = AngleMode.degrees;
   double _memory = 0;
+  double _lastAnswer = 0;
+  bool _hasAnswer = false;
+  String? _repeatOperator;
+  String? _repeatOperand;
 
   String get expression => _expression;
   String get display => _display;
@@ -37,7 +42,11 @@ class CalculatorController extends ChangeNotifier {
   bool get highContrast => _highContrast;
   AngleMode get angleMode => _angleMode;
   bool get hasMemory => _memory != 0;
+  double get memoryValue => _memory;
+  bool get hasAnswer => _hasAnswer;
+  bool get launchSeen => _launchSeen;
   List<String> get history => List<String>.unmodifiable(_history);
+  Set<String> get pinnedHistory => Set<String>.unmodifiable(_pinnedHistory);
 
   Future<void> initialize() async {
     final preferences = _preferences;
@@ -45,13 +54,29 @@ class CalculatorController extends ChangeNotifier {
       return;
     }
     final settings = await preferences.load();
+    final currentHistory = List<String>.of(_history);
     _history
       ..clear()
-      ..addAll(settings.history.take(12));
+      ..addAll(currentHistory)
+      ..addAll(
+        settings.history
+            .where((item) => !currentHistory.contains(item))
+            .take(50 - currentHistory.length),
+      );
+    _pinnedHistory.addAll(settings.pinnedHistory);
     _highContrast = settings.highContrast;
     _angleMode = settings.radians ? AngleMode.radians : AngleMode.degrees;
     _memory = settings.memory;
+    _launchSeen = settings.launchSeen;
     notifyListeners();
+  }
+
+  void markLaunchSeen() {
+    if (_launchSeen) {
+      return;
+    }
+    _launchSeen = true;
+    _persist();
   }
 
   void handleKey(String key) {
@@ -78,9 +103,15 @@ class CalculatorController extends ChangeNotifier {
           'exp':
         _applyScientificKey(key);
       case 'pi':
-        _appendConstant(math.pi);
+        _appendToken('pi');
       case 'e':
-        _appendConstant(math.e);
+        _appendToken('e');
+      case 'ANS':
+        if (_hasAnswer) {
+          _appendToken('ans');
+        }
+      case 'x':
+        _appendToken('x');
       case 'MC':
         _clearMemory();
       case 'MR':
@@ -102,6 +133,18 @@ class CalculatorController extends ChangeNotifier {
     }
   }
 
+  void setExpression(String value) {
+    _expression = value
+        .replaceAll('×', '*')
+        .replaceAll('÷', '/')
+        .replaceAll(',', '.')
+        .replaceAll(RegExp(r'\s+'), '');
+    _errorMessage = null;
+    _resultCommitted = false;
+    _refreshPreview();
+    notifyListeners();
+  }
+
   void toggleScientific() {
     _scientificVisible = !_scientificVisible;
     notifyListeners();
@@ -117,12 +160,29 @@ class CalculatorController extends ChangeNotifier {
     _angleMode = _angleMode == AngleMode.degrees
         ? AngleMode.radians
         : AngleMode.degrees;
+    _refreshPreview();
     notifyListeners();
     _persist();
   }
 
   void clearHistory() {
     _history.clear();
+    _pinnedHistory.clear();
+    notifyListeners();
+    _persist();
+  }
+
+  void deleteHistory(String item) {
+    _history.remove(item);
+    _pinnedHistory.remove(item);
+    notifyListeners();
+    _persist();
+  }
+
+  void toggleHistoryPinned(String item) {
+    if (!_pinnedHistory.add(item)) {
+      _pinnedHistory.remove(item);
+    }
     notifyListeners();
     _persist();
   }
@@ -139,12 +199,22 @@ class CalculatorController extends ChangeNotifier {
     notifyListeners();
   }
 
+  double evaluateForGraph(String expression, double x) {
+    return _engine.evaluate(
+      expression,
+      degrees: _angleMode == AngleMode.degrees,
+      variables: <String, double>{'x': x, 'ans': _lastAnswer},
+    );
+  }
+
   void _clearExpression() {
     _expression = '';
     _display = '0';
     _preview = '';
     _errorMessage = null;
     _resultCommitted = false;
+    _repeatOperator = null;
+    _repeatOperand = null;
   }
 
   void _deleteLast() {
@@ -173,11 +243,12 @@ class CalculatorController extends ChangeNotifier {
 
     if (normalizedKey == '(' && _expression.isNotEmpty) {
       final last = _expression[_expression.length - 1];
-      if (RegExp(r'[0-9)]').hasMatch(last)) {
+      if (RegExp(r'[0-9a-zA-Z)!%]').hasMatch(last)) {
         _expression += '*';
       }
     } else if (RegExp(r'^[0-9]$').hasMatch(normalizedKey) &&
-        _expression.endsWith(')')) {
+        _expression.isNotEmpty &&
+        RegExp(r'[)a-zA-Z!%]').hasMatch(_expression[_expression.length - 1])) {
       _expression += '*';
     }
 
@@ -193,7 +264,7 @@ class CalculatorController extends ChangeNotifier {
       if (_expression.endsWith(')')) {
         return false;
       }
-      final parts = _expression.split(RegExp(r'[+\-*/^()]'));
+      final parts = _expression.split(RegExp(r'[+\-*/^()%!]'));
       return parts.isEmpty || !parts.last.contains('.');
     }
     if (key == '(') {
@@ -206,7 +277,7 @@ class CalculatorController extends ChangeNotifier {
       final openCount = '('.allMatches(_expression).length;
       final closeCount = ')'.allMatches(_expression).length;
       final last = _expression[_expression.length - 1];
-      return openCount > closeCount && RegExp(r'[0-9)]').hasMatch(last);
+      return openCount > closeCount && RegExp(r'[0-9a-zA-Z)!%]').hasMatch(last);
     }
     if ('+-*/^'.contains(key)) {
       if (_expression.isEmpty) {
@@ -216,21 +287,31 @@ class CalculatorController extends ChangeNotifier {
       if (key == '-') {
         return last != '.' && last != '-';
       }
-      return RegExp(r'[0-9)]').hasMatch(last);
+      return RegExp(r'[0-9a-zA-Z)!%]').hasMatch(last);
     }
     return false;
   }
 
-  void _refreshPreview() {
+  void _refreshPreview({bool surfaceErrors = false}) {
     _preview = _expression;
     if (_expression.isEmpty) {
       _display = '0';
       return;
     }
+    if (_expression.toLowerCase().contains('x')) {
+      _display = 'f(x)';
+      return;
+    }
     try {
-      _display = formatNumber(_engine.evaluate(_expression));
-    } on FormatException {
-      _display = '';
+      _display =
+          _engine.evaluateExactDecimal(_expression) ??
+          formatNumber(_evaluate(_expression));
+    } on FormatException catch (error) {
+      if (surfaceErrors) {
+        _setError(error.message.toString());
+      } else {
+        _display = '';
+      }
     }
   }
 
@@ -238,15 +319,38 @@ class CalculatorController extends ChangeNotifier {
     if (_expression.isEmpty) {
       return;
     }
+    if (_expression.toLowerCase().contains('x')) {
+      _setError('Utilisez le grapheur pour une expression contenant x');
+      return;
+    }
+    if (_resultCommitted && _repeatOperator != null && _repeatOperand != null) {
+      _expression = '$_display$_repeatOperator$_repeatOperand';
+    } else {
+      _captureRepeatOperation(_expression);
+    }
+
+    final closedExpression = _closeParentheses(_expression);
     try {
-      final formatted = formatNumber(_engine.evaluate(_expression));
-      _history.insert(0, '$_expression = $formatted');
-      if (_history.length > 12) {
-        _history.removeLast();
+      final result = _evaluate(closedExpression);
+      final formatted =
+          _engine.evaluateExactDecimal(closedExpression) ??
+          formatNumber(result);
+      final historyItem = '$closedExpression = $formatted';
+      _history
+        ..remove(historyItem)
+        ..insert(0, historyItem);
+      if (_history.length > 50) {
+        final removable = _history.lastWhere(
+          (item) => !_pinnedHistory.contains(item),
+          orElse: () => _history.last,
+        );
+        _history.remove(removable);
       }
-      _preview = _expression;
+      _preview = closedExpression;
       _display = formatted;
       _expression = formatted;
+      _lastAnswer = result;
+      _hasAnswer = true;
       _resultCommitted = true;
       _persist();
     } on FormatException catch (error) {
@@ -254,82 +358,90 @@ class CalculatorController extends ChangeNotifier {
     }
   }
 
+  void _captureRepeatOperation(String expression) {
+    var depth = 0;
+    for (var position = expression.length - 1; position > 0; position--) {
+      final char = expression[position];
+      if (char == ')') {
+        depth++;
+      } else if (char == '(') {
+        depth--;
+      } else if (depth == 0 && '+-*/^'.contains(char)) {
+        _repeatOperator = char;
+        _repeatOperand = expression.substring(position + 1);
+        return;
+      }
+    }
+    _repeatOperator = null;
+    _repeatOperand = null;
+  }
+
+  String _closeParentheses(String expression) {
+    final missing =
+        '('.allMatches(expression).length - ')'.allMatches(expression).length;
+    return missing > 0
+        ? '$expression${List<String>.filled(missing, ')').join()}'
+        : expression;
+  }
+
   void _applyScientificKey(String key) {
-    final value = _currentValue();
-    if (value == null) {
+    switch (key) {
+      case 'x2':
+        _wrapOrAppendSuffix('^2');
+      case 'percent':
+        _wrapOrAppendSuffix('%');
+      case 'factorial':
+        _wrapOrAppendSuffix('!');
+      case 'inverse':
+        _wrapExpression('1/(', ')');
+      case 'negate':
+        _wrapExpression('-(', ')');
+      default:
+        _insertFunction(key);
+    }
+  }
+
+  void _insertFunction(String function) {
+    if (_display == 'Erreur') {
+      _clearExpression();
+    }
+    final isWrapping =
+        _expression.isNotEmpty &&
+        !'+-*/^('.contains(_expression[_expression.length - 1]);
+    if (!isWrapping) {
+      _expression += '$function(';
+      _resultCommitted = false;
+    } else {
+      _expression = '$function($_expression)';
+      _resultCommitted = true;
+    }
+    _refreshPreview(surfaceErrors: isWrapping);
+  }
+
+  void _wrapExpression(String prefix, String suffix) {
+    final value = _expression;
+    if (value.isEmpty) {
+      _expression = prefix;
+      _resultCommitted = false;
+    } else {
+      _expression = '$prefix$value$suffix';
+      _resultCommitted = true;
+    }
+    _refreshPreview(surfaceErrors: _resultCommitted);
+  }
+
+  void _wrapOrAppendSuffix(String suffix) {
+    if (_expression.isEmpty ||
+        '+-*/^('.contains(_expression[_expression.length - 1])) {
       _setError('Expression incomplète');
       return;
     }
-
-    final double result;
-    switch (key) {
-      case 'sin':
-        result = math.sin(_toRadians(value));
-      case 'cos':
-        result = math.cos(_toRadians(value));
-      case 'tan':
-        final angle = _toRadians(value);
-        if (math.cos(angle).abs() < 1e-12) {
-          _setError('Tangente indéfinie');
-          return;
-        }
-        result = math.tan(angle);
-      case 'log':
-        if (value <= 0) {
-          _setError('Logarithme réservé aux nombres positifs');
-          return;
-        }
-        result = math.log(value) / math.ln10;
-      case 'ln':
-        if (value <= 0) {
-          _setError('Logarithme réservé aux nombres positifs');
-          return;
-        }
-        result = math.log(value);
-      case 'sqrt':
-        if (value < 0) {
-          _setError('Racine carrée impossible');
-          return;
-        }
-        result = math.sqrt(value);
-      case 'inverse':
-        if (value == 0) {
-          _setError('Division par zéro');
-          return;
-        }
-        result = 1 / value;
-      case 'factorial':
-        if (value < 0 || value != value.truncateToDouble() || value > 170) {
-          _setError('Factorielle limitée aux entiers de 0 à 170');
-          return;
-        }
-        result = _factorial(value.toInt());
-      case 'x2':
-        result = value * value;
-      case 'percent':
-        result = value / 100;
-      case 'abs':
-        result = value.abs();
-      case 'negate':
-        result = -value;
-      case 'exp':
-        result = math.exp(value);
-      default:
-        result = value;
-    }
-
-    if (!result.isFinite) {
-      _setError('Résultat hors limites');
-      return;
-    }
-    final formatted = formatNumber(result);
-    _preview = '${_scientificLabel(key)}(${formatNumber(value)})';
-    _display = formatted;
-    _expression = formatted;
+    _expression += suffix;
     _resultCommitted = true;
+    _refreshPreview(surfaceErrors: true);
   }
 
-  void _appendConstant(double value) {
+  void _appendToken(String token) {
     if (_display == 'Erreur' || _resultCommitted) {
       _expression = '';
     }
@@ -338,11 +450,17 @@ class CalculatorController extends ChangeNotifier {
       return;
     }
     if (_expression.isNotEmpty &&
-        RegExp(r'[0-9)]').hasMatch(_expression[_expression.length - 1])) {
+        RegExp(
+          r'[0-9a-zA-Z)!%]',
+        ).hasMatch(_expression[_expression.length - 1])) {
       _expression += '*';
     }
-    _expression += formatNumber(value);
+    _expression += token;
     _refreshPreview();
+  }
+
+  void _appendConstant(double value) {
+    _appendToken(formatNumber(value));
   }
 
   void _updateMemory({required bool add}) {
@@ -361,40 +479,25 @@ class CalculatorController extends ChangeNotifier {
   }
 
   double? _currentValue() {
-    if (_display.isNotEmpty && _display != 'Erreur') {
+    if (_display.isNotEmpty && _display != 'Erreur' && _display != 'f(x)') {
       return double.tryParse(_display);
     }
     if (_expression.isEmpty) {
       return 0;
     }
     try {
-      return _engine.evaluate(_expression);
+      return _evaluate(_expression);
     } on FormatException {
       return null;
     }
   }
 
-  double _toRadians(double value) {
-    return _angleMode == AngleMode.degrees ? value * math.pi / 180 : value;
-  }
-
-  double _factorial(int value) {
-    var result = 1.0;
-    for (var factor = 2; factor <= value; factor++) {
-      result *= factor;
-    }
-    return result;
-  }
-
-  String _scientificLabel(String key) {
-    return switch (key) {
-      'x2' => 'carré',
-      'percent' => '%',
-      'inverse' => '1/x',
-      'negate' => '±',
-      'factorial' => 'n!',
-      _ => key,
-    };
+  double _evaluate(String expression) {
+    return _engine.evaluate(
+      expression,
+      degrees: _angleMode == AngleMode.degrees,
+      variables: <String, double>{'ans': _lastAnswer},
+    );
   }
 
   void _setError(String message) {
@@ -405,18 +508,18 @@ class CalculatorController extends ChangeNotifier {
   }
 
   String formatNumber(double value) {
-    if (value == 0) {
+    if (value.abs() < 1e-14) {
       return '0';
     }
-    if (value.abs() >= 1e15 || value.abs() < 1e-10) {
+    if (value.abs() >= 1e15 || value.abs() < 1e-12) {
       return value
-          .toStringAsExponential(10)
+          .toStringAsExponential(12)
           .replaceFirst(RegExp(r'\.0+(?=e)'), '');
     }
-    if (value == value.roundToDouble()) {
+    if (value == value.roundToDouble() && value.abs() <= 9007199254740991) {
       return value.toInt().toString();
     }
-    return value.toStringAsPrecision(12).replaceFirst(RegExp(r'\.?0+$'), '');
+    return value.toStringAsPrecision(14).replaceFirst(RegExp(r'\.?0+$'), '');
   }
 
   void _persist() {
@@ -427,9 +530,11 @@ class CalculatorController extends ChangeNotifier {
     unawaited(
       preferences.save(
         history: _history,
+        pinnedHistory: _pinnedHistory.toList(growable: false),
         highContrast: _highContrast,
         radians: _angleMode == AngleMode.radians,
         memory: _memory,
+        launchSeen: _launchSeen,
       ),
     );
   }

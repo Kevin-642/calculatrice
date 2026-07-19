@@ -53,9 +53,11 @@ void main() {
       final preferences = _FakePreferences(
         const CalculatorSettings(
           history: <String>['1+1 = 2'],
+          pinnedHistory: <String>['1+1 = 2'],
           highContrast: true,
           radians: true,
           memory: 42,
+          launchSeen: true,
         ),
       );
       final controller = CalculatorController(preferences: preferences);
@@ -65,6 +67,8 @@ void main() {
       expect(controller.highContrast, isTrue);
       expect(controller.angleMode, AngleMode.radians);
       expect(controller.hasMemory, isTrue);
+      expect(controller.launchSeen, isTrue);
+      expect(controller.pinnedHistory, contains('1+1 = 2'));
 
       controller.toggleHighContrast();
       await Future<void>.delayed(Duration.zero);
@@ -77,6 +81,45 @@ void main() {
 
       expect(controller.expression, '(2+3)*4');
       expect(controller.display, '20');
+    });
+
+    test('supports ANS, automatic parentheses and repeated equals', () {
+      final controller = CalculatorController();
+
+      controller.setExpression('2+3');
+      controller.handleKey('=');
+      expect(controller.display, '5');
+      controller.handleKey('=');
+      expect(controller.display, '8');
+
+      controller.handleKey('C');
+      controller.handleKey('ANS');
+      controller.handleKey('*');
+      controller.handleKey('2');
+      controller.handleKey('=');
+      expect(controller.display, '16');
+
+      controller.setExpression('sqrt(9');
+      controller.handleKey('=');
+      expect(controller.display, '3');
+    });
+
+    test('pins and deletes individual history entries', () {
+      final controller = CalculatorController();
+      controller.setExpression('6*7');
+      controller.handleKey('=');
+      final item = controller.history.single;
+
+      controller.toggleHistoryPinned(item);
+      expect(controller.pinnedHistory, contains(item));
+      controller.deleteHistory(item);
+      expect(controller.history, isEmpty);
+      expect(controller.pinnedHistory, isEmpty);
+    });
+
+    test('evaluates graph expressions with x', () {
+      final controller = CalculatorController();
+      expect(controller.evaluateForGraph('x^2-1', 3), 8);
     });
   });
 }
@@ -93,15 +136,19 @@ class _FakePreferences implements CalculatorPreferences {
   @override
   Future<void> save({
     required List<String> history,
+    required List<String> pinnedHistory,
     required bool highContrast,
     required bool radians,
     required double memory,
+    required bool launchSeen,
   }) async {
     saved = CalculatorSettings(
       history: List<String>.of(history),
+      pinnedHistory: List<String>.of(pinnedHistory),
       highContrast: highContrast,
       radians: radians,
       memory: memory,
+      launchSeen: launchSeen,
     );
   }
 }
