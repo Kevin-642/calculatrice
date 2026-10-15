@@ -29,7 +29,8 @@ android {
 
     defaultConfig {
         applicationId = "com.kevincreation.calculatricecosmique"
-        minSdk = flutter.minSdkVersion
+        // Required by Google Play automatic protection.
+        minSdk = 24
         targetSdk = 36
         versionCode = flutter.versionCode
         versionName = flutter.versionName
