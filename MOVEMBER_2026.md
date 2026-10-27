@@ -86,3 +86,13 @@ Prompt de génération :
 > This is an alternative proposal, preserve cosmic identity.
 
 Le fichier obtenu est conservé tel que généré ; format carré, contrôlé visuellement.
+
+## Résultat de compilation
+
+Compilation release réussie le 27 octobre 2026, code de sortie 0.
+Fichier local : `build/app/outputs/bundle/release/app-release.aab`.
+Taille : 43 417 363 octets (environ 41,4 Mio).
+Version candidate : 1.2.3 (7), paramètres de compilation explicites ; la version
+par défaut du pubspec reste 1.2.2+6.
+SHA-256 : `EE48163D3814CB985BC050C34B23EBE0AAEFDF4E1DF129C32DCF8F97969B0579`.
+Bundle conservé localement, non ajouté à Git et non envoyé à Google Play.
