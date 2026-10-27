@@ -55,6 +55,7 @@ flutter:
 
   assets:
     - assets/brand/logo.png
+    - assets/brand/movember_2026.png
 
   # To add assets to your application, add an assets section, like this:
   # assets:

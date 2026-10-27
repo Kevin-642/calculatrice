@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 
 import 'calculator_controller.dart';
 import 'calculator_preferences.dart';
+import 'movember_campaign.dart';
 
 void main() {
   runApp(const CalculatorApp());
@@ -25,7 +26,7 @@ class CalculatorApp extends StatelessWidget {
         ),
         useMaterial3: true,
       ),
-      home: const CalculatorScreen(),
+      home: const MovemberCampaign(child: CalculatorScreen()),
     );
   }
 }
@@ -595,6 +596,7 @@ class _CalculatorScreenState extends State<CalculatorScreen>
                                                   .toggleHistoryPinned,
                                               onCopy: _copyText,
                                             ),
+                                            const MovemberCard(),
                                           ],
                                         ),
                                       ),
@@ -1036,7 +1038,16 @@ class _Header extends StatelessWidget {
               ],
             ),
             clipBehavior: Clip.antiAlias,
-            child: Image.asset('assets/brand/logo.png', fit: BoxFit.cover),
+            child: Image.asset(
+              MovemberScope.of(context)
+                  ? movemberAsset
+                  : 'assets/brand/logo.png',
+              cacheWidth: 144,
+              fit: BoxFit.cover,
+              semanticLabel: MovemberScope.of(context)
+                  ? 'Planète moustachue Movember'
+                  : 'Calculatrice Cosmique',
+            ),
           ),
           const SizedBox(width: 10),
           Expanded(
